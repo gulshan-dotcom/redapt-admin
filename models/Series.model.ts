@@ -1,0 +1,44 @@
+import { Schema, model, models } from "mongoose";
+import { SubscriptionPlan } from "../enums";
+import { ISeries } from "@/types/Series";
+import { Question } from "@/models/Question.model";
+import { Category } from "@/models/Category.model";
+
+const numericSubscriptionPlans = Object.values(SubscriptionPlan).filter(
+  (v): v is number => typeof v === "number"
+);
+
+const SeriesSchema = new Schema<ISeries>(
+  {
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    joinedBy: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    chapters: [
+      {
+        content: {
+          type: Schema.Types.ObjectId,
+          required: true,
+          refPath: "chapters.contentModel",
+        },
+        contentModel: {
+          type: String,
+          required: true,
+          enum: ["Chapter", "Question"],
+        },
+        order: { type: Number, required: true },
+      },
+    ],
+    for: {
+      type: Number,
+      enum: numericSubscriptionPlans,
+      default: SubscriptionPlan.FREE,
+    },
+    cover: { type: String, required: true },
+    category: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+  },
+  { timestamps: true }
+);
+
+export const Series =
+  models.Series || model<ISeries>("Series", SeriesSchema);
+
