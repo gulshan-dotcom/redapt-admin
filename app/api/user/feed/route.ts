@@ -83,8 +83,11 @@ export async function GET(req: NextRequest) {
 
     const series = await Series.find({}).lean();
 
-    const available = await Chapter.find({for : user.subscription.plan}).sort({ updatedAt: -1 })
-      .limit(10)
+    const available = await Chapter.find({
+      for: { $lte: user.subscription.plan },
+    })
+      .sort({ updatedAt: -1 })
+      .limit(10);
 
     return NextResponse.json({
       success: true,

@@ -13,7 +13,8 @@ export async function GET(_: Request, { params }: Params) {
   try {
     await connectMongo();
 
-    const { categoryId } = params;
+    const { categoryId } = await params;
+    console.log("Invalid category id:", categoryId);
 
     if (!Types.ObjectId.isValid(categoryId)) {
       return NextResponse.json(

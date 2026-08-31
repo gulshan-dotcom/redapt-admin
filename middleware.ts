@@ -40,7 +40,8 @@ export async function middleware(request: NextRequest) {
 
   if (
     pathname.startsWith("/api/user") &&
-    !pathname.startsWith("/api/user/auth/login")
+    !pathname.startsWith("/api/user/auth/login") &&
+    !pathname.startsWith("/api/user/payment/confirm")
   ) {
     let userEmail = "";
 

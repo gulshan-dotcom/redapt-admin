@@ -3,6 +3,9 @@ import { User } from "@/models/User.model";
 import connectMongo from "@/lib/connectMongo";
 import { UploadThingError } from "uploadthing/server";
 const f = createUploadthing();
+import { UTApi } from "uploadthing/server";
+
+export const utapi = new UTApi();
 
 export const ourFileRouter = {
   profileImage: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })

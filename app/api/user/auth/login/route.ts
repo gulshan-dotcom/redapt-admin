@@ -3,60 +3,80 @@ import jwt from "jsonwebtoken";
 import connectMongo from "@/lib/connectMongo";
 import { User } from "@/models/User.model";
 
-// interface GoogleUser {
-//   email: string;
-//   name: string;
-//   picture: string;
-//   sub?: string;
-// }
-
-interface tempUserInfoBody {
-  email: string;
-  name: string;
-  picture: string;
+interface GoogleTokenInfo {
+  email?: string;
+  name?: string;
+  picture?: string;
+  sub?: string;
+  error_description?: string;
 }
 
 export async function POST(req: Request) {
   try {
-    // const { googleAccessToken } = await req.json();
+    const { googleAccessToken, idToken } = await req.json();
 
-    // if (!googleAccessToken) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Missing googleAccessToken" },
-    //     { status: 400 }
-    //   );
-    // }
+    const tokenToVerify = idToken || googleAccessToken;
 
-    // const userInfoRes = await fetch(
-    //   "https://www.googleapis.com/oauth2/v3/userinfo",
-    //   {
-    //     headers: {
-    //       Authorization: `Bearer ${googleAccessToken}`,
-    //     },
-    //   }
-    // );
-
-    // if (!userInfoRes.ok) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Failed to fetch Google user info" },
-    //     { status: 401 }
-    //   );
-    // }
-
-    // const googleUser: GoogleUser = await userInfoRes.json();
-    // const { email, name, picture } = googleUser;
-    
-    const body = (await req.json()) as tempUserInfoBody;
-
-    const { email, name, picture } = body;
-
-    if (!email) {
+    if (!tokenToVerify) {
       return NextResponse.json(
-        { success: false, message: "Email not found from Google" },
+        { success: false, message: "Missing Google token" },
         { status: 400 }
       );
     }
 
+    let email: string | undefined;
+    let name: string | undefined;
+    let picture: string | undefined;
+
+    // 1. Verify token with Google's OAuth2 tokeninfo endpoint
+    if (idToken) {
+      const googleRes = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`
+      );
+      const data: GoogleTokenInfo = await googleRes.json();
+
+      if (!googleRes.ok || !data.email) {
+        return NextResponse.json(
+          { success: false, message: "Invalid or expired Google ID token" },
+          { status: 401 }
+        );
+      }
+
+      email = data.email;
+      name = data.name;
+      picture = data.picture;
+    } else {
+      // Fallback: Verify access token via userinfo endpoint
+      const userInfoRes = await fetch(
+        "https://www.googleapis.com/oauth2/v3/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${googleAccessToken}`,
+          },
+        }
+      );
+
+      if (!userInfoRes.ok) {
+        return NextResponse.json(
+          { success: false, message: "Failed to fetch Google user info" },
+          { status: 401 }
+        );
+      }
+
+      const googleUser: GoogleTokenInfo = await userInfoRes.json();
+      email = googleUser.email;
+      name = googleUser.name;
+      picture = googleUser.picture;
+    }
+
+    if (!email) {
+      return NextResponse.json(
+        { success: false, message: "Email not provided by Google account" },
+        { status: 400 }
+      );
+    }
+
+    // 2. Connect DB & Find/Create User
     await connectMongo();
 
     let user = await User.findOne({ email });
@@ -68,12 +88,13 @@ export async function POST(req: Request) {
 
       user = await User.create({
         email,
-        name,
+        name: name || baseId,
         userId,
         image: picture,
       });
     }
 
+    // 3. Issue internal JWT
     const token = jwt.sign(
       {
         _id: user._id,
