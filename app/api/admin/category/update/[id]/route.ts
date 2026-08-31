@@ -5,10 +5,12 @@ import { CreateCategoryBody } from "@/types/Body";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectMongo();
+
+    const { id } = await params;
 
     const body = (await req.json()) as CreateCategoryBody;
     const { name, image } = body;
@@ -21,7 +23,7 @@ export async function PUT(
     }
 
     const category = await Category.findByIdAndUpdate(
-      params.id,
+      id,
       { $set: { name, image } },
       { new: true }
     );
@@ -33,12 +35,17 @@ export async function PUT(
       );
     }
 
-    return NextResponse.json({ success: true,category });
+    return NextResponse.json({
+      success: true,
+      category,
+    });
   } catch (err) {
     console.log(err);
+
     return NextResponse.json(
       { success: false, message: "Category update failed" },
       { status: 500 }
     );
   }
 }
+
