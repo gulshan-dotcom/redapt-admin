@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
         name: user.name,
         email: user.email,
       },
-      callback_url: `http://10.146.80.226:3000/redirect?userId=${user._id}&planId=${planId}`,
+      callback_url: `https://redapt-admin-sand.vercel.app/redirect?userId=${user._id}&planId=${planId}`,
       callback_method: 'get',
     });
 
