@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       success: true,
       payment: updatedPayment,
     });
-  } catch (err: Error) {
+  } catch (err: any) {
     console.error("Confirm Error:", err);
     return NextResponse.json(
       { success: false, error: err?.message || "Confirmation failed" },
