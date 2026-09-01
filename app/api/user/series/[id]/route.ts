@@ -8,7 +8,7 @@ import "@/models/Chapter.model";
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectMongo();

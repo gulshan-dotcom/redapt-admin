@@ -4,9 +4,9 @@ import connectMongo from "@/lib/connectMongo";
 import { Chapter } from "@/models/Chapter.model";
 
 interface Params {
-  params: {
+  params: Promise<{
     categoryId: string;
-  };
+  }>;
 }
 
 export async function GET(_: Request, { params }: Params) {

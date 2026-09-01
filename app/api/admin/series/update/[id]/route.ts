@@ -5,9 +5,10 @@ import { ISeries } from "@/types/Series";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const {id : seriesId} = await params
     await connectMongo();
     const body = await req.json();
 
@@ -38,7 +39,7 @@ export async function PUT(
     }
 
     const series = await Series.findByIdAndUpdate(
-      params.id,
+      seriesId,
       { $set: update },
       { new: true }
     );

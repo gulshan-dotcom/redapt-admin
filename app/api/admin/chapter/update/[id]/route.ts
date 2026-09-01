@@ -6,9 +6,10 @@ import { IChapter } from "@/types/Chapter";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const {id : chapterId} = await params
     await connectMongo();
     const body = await req.json();
 
@@ -51,7 +52,7 @@ export async function PUT(
     }
 
     const chapter = await Chapter.findByIdAndUpdate(
-      params.id,
+      chapterId,
       { $set: update },
       { new: true }
     );
